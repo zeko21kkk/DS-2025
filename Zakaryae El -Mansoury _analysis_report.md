@@ -1,6 +1,7 @@
 # Rapport d'Analyse Approfondie du PIB des Principales Économies Mondiales
 A.Zakaryae 
----![Uploading Headshot.jpeg…]()
+---
+![Headshot](https://github.com/user-attachments/assets/35e976f0-736b-43f3-bc78-84295651ac77)
 
 
 ## 1. INTRODUCTION ET CADRAGE DE L'ANALYSE
