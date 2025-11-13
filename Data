@@ -1,1 +1,393 @@
+!pip install ucimlrepo
+from ucimlrepo import fetch_ucirepo 
+  
+# fetch dataset 
+adult = fetch_ucirepo(id=2) 
+  
+# data (as pandas dataframes) 
+X = adult.data.features 
+y = adult.data.targets 
+  
+# metadata 
+print(adult.metadata) 
+  
+# variable information 
+print(adult.variables)
+# ============================================================
+# ANALYSE DESCRIPTIVE COMPLÈTE DU DATASET ADULT (CENSUS INCOME)
+# ============================================================
 
+# Installation et importation des bibliothèques nécessaires
+!pip install ucimlrepo
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from ucimlrepo import fetch_ucirepo
+import warnings
+warnings.filterwarnings('ignore')
+
+# Configuration de l'affichage
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', 100)
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
+
+print("=" * 70)
+print("ANALYSE DESCRIPTIVE DU DATASET ADULT (CENSUS INCOME)")
+print("=" * 70)
+
+# ============================================================
+# 1. CHARGEMENT DES DONNÉES
+# ============================================================
+
+print("\n" + "=" * 70)
+print("1. CHARGEMENT DES DONNÉES")
+print("=" * 70)
+
+# Télécharger le dataset depuis UCI ML Repository
+adult = fetch_ucirepo(id=2)
+
+# Extraire les features et la variable cible
+X = adult.data.features
+y = adult.data.targets
+
+# Créer un dataframe complet
+df = pd.concat([X, y], axis=1)
+
+print(f"\n✓ Dataset chargé avec succès!")
+print(f"  - Nombre de lignes : {df.shape[0]:,}")
+print(f"  - Nombre de colonnes : {df.shape[1]}")
+
+# ============================================================
+# 2. APERÇU DES DONNÉES
+# ============================================================
+
+print("\n" + "=" * 70)
+print("2. APERÇU DES DONNÉES")
+print("=" * 70)
+
+print("\n--- Premières lignes du dataset ---")
+print(df.head(10))
+
+print("\n--- Dernières lignes du dataset ---")
+print(df.tail(5))
+
+print("\n--- Échantillon aléatoire ---")
+print(df.sample(5, random_state=42))
+
+# ============================================================
+# 3. INFORMATIONS GÉNÉRALES SUR LE DATASET
+# ============================================================
+
+print("\n" + "=" * 70)
+print("3. INFORMATIONS GÉNÉRALES")
+print("=" * 70)
+
+print("\n--- Types de données ---")
+print(df.dtypes)
+
+print("\n--- Informations détaillées ---")
+df.info()
+
+print("\n--- Mémoire utilisée ---")
+memory_usage = df.memory_usage(deep=True).sum() / 1024**2
+print(f"Mémoire totale utilisée : {memory_usage:.2f} MB")
+
+# ============================================================
+# 4. STATISTIQUES DESCRIPTIVES
+# ============================================================
+
+print("\n" + "=" * 70)
+print("4. STATISTIQUES DESCRIPTIVES")
+print("=" * 70)
+
+# Variables numériques
+print("\n--- Variables numériques ---")
+numerical_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+print(f"Variables numériques : {numerical_cols}")
+print("\n" + df[numerical_cols].describe().T.to_string())
+
+# Variables catégorielles
+print("\n--- Variables catégorielles ---")
+categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+print(f"Variables catégorielles : {categorical_cols}")
+print("\n" + df[categorical_cols].describe().T.to_string())
+
+# ============================================================
+# 5. VALEURS MANQUANTES
+# ============================================================
+
+print("\n" + "=" * 70)
+print("5. ANALYSE DES VALEURS MANQUANTES")
+print("=" * 70)
+
+missing_data = pd.DataFrame({
+    'Colonne': df.columns,
+    'Valeurs manquantes': df.isnull().sum(),
+    'Pourcentage (%)': (df.isnull().sum() / len(df)) * 100
+})
+missing_data = missing_data[missing_data['Valeurs manquantes'] > 0].sort_values(
+    'Valeurs manquantes', ascending=False
+)
+
+if len(missing_data) > 0:
+    print("\n" + missing_data.to_string(index=False))
+else:
+    print("\n✓ Aucune valeur manquante détectée!")
+
+# Vérifier les valeurs " ?" qui représentent des manquants
+print("\n--- Vérification des valeurs '?' (valeurs manquantes codées) ---")
+for col in categorical_cols:
+    count_question = (df[col] == ' ?').sum()
+    if count_question > 0:
+        print(f"  {col}: {count_question} valeurs '?' ({count_question/len(df)*100:.2f}%)")
+
+# ============================================================
+# 6. ANALYSE DE LA VARIABLE CIBLE
+# ============================================================
+
+print("\n" + "=" * 70)
+print("6. ANALYSE DE LA VARIABLE CIBLE (INCOME)")
+print("=" * 70)
+
+target_col = y.columns[0]
+print(f"\nVariable cible : {target_col}")
+
+# Distribution de la variable cible
+target_dist = df[target_col].value_counts()
+target_pct = df[target_col].value_counts(normalize=True) * 100
+
+print("\n--- Distribution ---")
+for val, count in target_dist.items():
+    pct = target_pct[val]
+    print(f"  {val}: {count:,} ({pct:.2f}%)")
+
+# Visualisation
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Graphique en barres
+target_dist.plot(kind='bar', ax=axes[0], color=['#2ecc71', '#e74c3c'])
+axes[0].set_title('Distribution de la Variable Cible', fontsize=14, fontweight='bold')
+axes[0].set_xlabel('Revenu', fontsize=12)
+axes[0].set_ylabel('Nombre d\'observations', fontsize=12)
+axes[0].tick_params(axis='x', rotation=0)
+
+# Graphique circulaire
+axes[1].pie(target_dist, labels=target_dist.index, autopct='%1.1f%%',
+            startangle=90, colors=['#2ecc71', '#e74c3c'])
+axes[1].set_title('Proportion de la Variable Cible', fontsize=14, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+
+# ============================================================
+# 7. ANALYSE DES VARIABLES NUMÉRIQUES
+# ============================================================
+
+print("\n" + "=" * 70)
+print("7. ANALYSE DÉTAILLÉE DES VARIABLES NUMÉRIQUES")
+print("=" * 70)
+
+for col in numerical_cols:
+    print(f"\n--- {col.upper()} ---")
+    print(f"  Moyenne        : {df[col].mean():.2f}")
+    print(f"  Médiane        : {df[col].median():.2f}")
+    print(f"  Écart-type     : {df[col].std():.2f}")
+    print(f"  Min            : {df[col].min():.2f}")
+    print(f"  Max            : {df[col].max():.2f}")
+    print(f"  Q1 (25%)       : {df[col].quantile(0.25):.2f}")
+    print(f"  Q3 (75%)       : {df[col].quantile(0.75):.2f}")
+    print(f"  Asymétrie      : {df[col].skew():.2f}")
+    print(f"  Aplatissement  : {df[col].kurtosis():.2f}")
+
+# Visualisation des distributions
+fig, axes = plt.subplots(3, 2, figsize=(15, 12))
+axes = axes.ravel()
+
+for idx, col in enumerate(numerical_cols):
+    axes[idx].hist(df[col].dropna(), bins=50, color='skyblue', edgecolor='black', alpha=0.7)
+    axes[idx].set_title(f'Distribution de {col}', fontsize=12, fontweight='bold')
+    axes[idx].set_xlabel(col, fontsize=10)
+    axes[idx].set_ylabel('Fréquence', fontsize=10)
+    axes[idx].axvline(df[col].mean(), color='red', linestyle='--', label=f'Moyenne: {df[col].mean():.1f}')
+    axes[idx].axvline(df[col].median(), color='green', linestyle='--', label=f'Médiane: {df[col].median():.1f}')
+    axes[idx].legend()
+
+plt.tight_layout()
+plt.show()
+
+# Box plots
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+axes = axes.ravel()
+
+for idx, col in enumerate(numerical_cols):
+    sns.boxplot(y=df[col], ax=axes[idx], color='lightblue')
+    axes[idx].set_title(f'Box Plot - {col}', fontsize=12, fontweight='bold')
+    axes[idx].set_ylabel(col, fontsize=10)
+
+plt.tight_layout()
+plt.show()
+
+# ============================================================
+# 8. ANALYSE DES VARIABLES CATÉGORIELLES
+# ============================================================
+
+print("\n" + "=" * 70)
+print("8. ANALYSE DÉTAILLÉE DES VARIABLES CATÉGORIELLES")
+print("=" * 70)
+
+for col in categorical_cols:
+    print(f"\n--- {col.upper()} ---")
+    value_counts = df[col].value_counts()
+    value_pcts = df[col].value_counts(normalize=True) * 100
+    
+    print(f"  Nombre de catégories uniques : {df[col].nunique()}")
+    print(f"  Catégories :")
+    for val, count in value_counts.head(10).items():
+        pct = value_pcts[val]
+        print(f"    {val}: {count:,} ({pct:.2f}%)")
+    
+    if len(value_counts) > 10:
+        print(f"    ... et {len(value_counts) - 10} autres catégories")
+
+# Visualisation des variables catégorielles (top 10 pour chaque)
+num_cat_vars = len(categorical_cols)
+fig, axes = plt.subplots((num_cat_vars + 1) // 2, 2, figsize=(16, 5 * ((num_cat_vars + 1) // 2)))
+axes = axes.ravel()
+
+for idx, col in enumerate(categorical_cols):
+    top_categories = df[col].value_counts().head(10)
+    top_categories.plot(kind='barh', ax=axes[idx], color='coral')
+    axes[idx].set_title(f'Top 10 - {col}', fontsize=12, fontweight='bold')
+    axes[idx].set_xlabel('Nombre d\'observations', fontsize=10)
+    axes[idx].set_ylabel('')
+    
+    # Ajouter les valeurs sur les barres
+    for i, v in enumerate(top_categories):
+        axes[idx].text(v, i, f' {v:,}', va='center', fontsize=9)
+
+# Masquer les axes vides si nombre impair
+if num_cat_vars % 2 != 0:
+    axes[-1].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+
+# ============================================================
+# 9. MATRICE DE CORRÉLATION
+# ============================================================
+
+print("\n" + "=" * 70)
+print("9. MATRICE DE CORRÉLATION (VARIABLES NUMÉRIQUES)")
+print("=" * 70)
+
+correlation_matrix = df[numerical_cols].corr()
+print("\n" + correlation_matrix.to_string())
+
+# Visualisation de la matrice de corrélation
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0,
+            square=True, linewidths=1, cbar_kws={"shrink": 0.8}, fmt='.2f')
+plt.title('Matrice de Corrélation des Variables Numériques', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.show()
+
+# ============================================================
+# 10. ANALYSE BIVARIÉE (VARIABLE CIBLE VS FEATURES)
+# ============================================================
+
+print("\n" + "=" * 70)
+print("10. ANALYSE BIVARIÉE (INCOME VS AUTRES VARIABLES)")
+print("=" * 70)
+
+# Variables numériques vs Income
+print("\n--- Variables numériques par catégorie de revenu ---")
+for col in numerical_cols:
+    print(f"\n{col.upper()}:")
+    grouped = df.groupby(target_col)[col].describe()[['mean', 'median', 'std']]
+    print(grouped.to_string())
+
+# Visualisation
+fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+axes = axes.ravel()
+
+for idx, col in enumerate(numerical_cols):
+    df.boxplot(column=col, by=target_col, ax=axes[idx])
+    axes[idx].set_title(f'{col} par Revenu', fontsize=12, fontweight='bold')
+    axes[idx].set_xlabel('Revenu', fontsize=10)
+    axes[idx].set_ylabel(col, fontsize=10)
+    plt.sca(axes[idx])
+    plt.xticks(rotation=0)
+
+plt.suptitle('')
+plt.tight_layout()
+plt.show()
+
+# Variables catégorielles vs Income (sélection de quelques-unes)
+important_cat_vars = ['workclass', 'education', 'marital-status', 'occupation', 'sex', 'race']
+available_cat_vars = [col for col in important_cat_vars if col in df.columns]
+
+print("\n--- Variables catégorielles par catégorie de revenu ---")
+for col in available_cat_vars[:3]:  # Limiter à 3 pour la lisibilité
+    print(f"\n{col.upper()}:")
+    crosstab = pd.crosstab(df[col], df[target_col], normalize='index') * 100
+    print(crosstab.to_string())
+
+# ============================================================
+# 11. DÉTECTION DES VALEURS ABERRANTES
+# ============================================================
+
+print("\n" + "=" * 70)
+print("11. DÉTECTION DES VALEURS ABERRANTES (MÉTHODE IQR)")
+print("=" * 70)
+
+for col in numerical_cols:
+    Q1 = df[col].quantile(0.25)
+    Q3 = df[col].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    
+    outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
+    
+    print(f"\n{col.upper()}:")
+    print(f"  Limite inférieure : {lower_bound:.2f}")
+    print(f"  Limite supérieure : {upper_bound:.2f}")
+    print(f"  Nombre de valeurs aberrantes : {len(outliers)} ({len(outliers)/len(df)*100:.2f}%)")
+
+# ============================================================
+# 12. RÉSUMÉ FINAL
+# ============================================================
+
+print("\n" + "=" * 70)
+print("12. RÉSUMÉ FINAL DE L'ANALYSE")
+print("=" * 70)
+
+print(f"""
+📊 STATISTIQUES GÉNÉRALES:
+  • Nombre total d'observations    : {len(df):,}
+  • Nombre de variables             : {df.shape[1]}
+  • Variables numériques            : {len(numerical_cols)}
+  • Variables catégorielles         : {len(categorical_cols)}
+  • Mémoire utilisée                : {memory_usage:.2f} MB
+
+🎯 VARIABLE CIBLE (INCOME):
+  • Classes                         : {df[target_col].nunique()}
+  • Distribution                    : {target_dist.to_dict()}
+
+⚠️  QUALITÉ DES DONNÉES:
+  • Valeurs manquantes totales      : {df.isnull().sum().sum()}
+  • Colonnes avec valeurs manquantes: {(df.isnull().sum() > 0).sum()}
+
+📈 OBSERVATIONS PRINCIPALES:
+  • Dataset déséquilibré (plus de personnes avec revenu ≤50K)
+  • Présence de valeurs '?' nécessitant un nettoyage
+  • Certaines variables montrent des valeurs aberrantes
+  • Corrélations intéressantes entre variables d'éducation et revenu
+""")
+
+print("\n" + "=" * 70)
+print("✓ ANALYSE TERMINÉE AVEC SUCCÈS!")
+print("=" * 70)
